@@ -33,7 +33,7 @@ Trigger this skill whenever the user:
 5. **Draft the Description** using the structure below.
 6. **Draft the Acceptance Criteria** using the Given/When/Then cards below.
 7. **Present the draft** to the user for review (unless they said "apply directly"). Show the custom-field values with the draft, and list every assumption you made under **Assumptions to confirm** (see Assumptions below). If the user has not answered the custom-field question yet, remind them once here.
-8. **Apply to ADO** using the ADO MCP update tool (`ado_update_work_items`). Update `description`, `acceptance_criteria` and the confirmed custom fields (via `custom_fields`) in a single call. If the user said to skip, apply without the missing fields (see Skipping below).
+8. **Apply to ADO** using the ADO MCP update tool (`ado_update_work_items`). Update `description`, `acceptance_criteria`, `assigned_to` (the logged-in user, see Assigned To below) and the confirmed custom fields (via `custom_fields`) in a single call. If the user said to skip, apply without the missing fields (see Skipping below).
 
 ---
 
@@ -133,6 +133,18 @@ Pass them in the same `ado_update_work_items` call as the Description and Accept
 ```
 
 Impact Level and Business Value Category are picklists, so the value must match an allowed option exactly. If ADO rejects a value, show the user the error and ask for a valid value.
+
+---
+
+## Assigned To
+
+Always assign the story to the logged-in user (the `@me` user). Do this every time you create or update a story, without asking.
+
+1. Call `ado_get_current_identity`. It returns `providerDisplayName` (e.g. `Ahmed Nasr Younis AbdElWahed`) and `properties.Account.$value` (e.g. `Ahmed-AbdElWahed`). It does not return an email.
+2. Build the identity as `Display Name <DOMAIN\Account>`, for example `Ahmed Nasr Younis AbdElWahed <ANDALUSIA\Ahmed-AbdElWahed>`. The domain is `ANDALUSIA`. You can also read it from the `uniqueName` of any work item's `System.CreatedBy` or `System.AssignedTo`.
+3. Pass it as `assigned_to` in the same `ado_update_work_items` call as the rest of the story (or in `ado_create_work_items` for a new story).
+4. If the PBI is already assigned to someone else, still set it to the logged-in user, and say in one line who it was assigned to before.
+5. If ADO rejects the identity, show the error and fall back to the `uniqueName` (`ANDALUSIA\Account`) alone.
 
 ---
 
@@ -319,6 +331,7 @@ For the other types, swap the border and background: Error `#A4262C` / `#FDE7E9`
 |-----------|---------|
 | `description` (System.Description) | Story statement callout + Context + Navigation + User/System Scenario + Data Sections |
 | `acceptance_criteria` (Microsoft.VSTS.Common.AcceptanceCriteria) | Given/When/Then AC cards (no heading) + Alerts and Messages cards (if any) |
+| `assigned_to` (System.AssignedTo) | The logged-in user, as `Display Name <ANDALUSIA\Account>` from `ado_get_current_identity` |
 | `custom_fields` → `Custom.Ticketnumber` | Ticket number given by the user |
 | `custom_fields` → `Custom.BusinessValueCategory` | Confirmed category (Compliance & Risk / Customer & Strategic Value / Cost & Efficiency) |
 | `custom_fields` → `Custom.BusinessImpactValue` | Confirmed 1–2 line business impact |
@@ -344,6 +357,7 @@ Description and Acceptance Criteria accept HTML. Set them and every confirmed cu
 - **Do NOT** draft without first suggesting the custom-field values and asking the user to confirm them, even when you are confident.
 - **Do NOT** write a suggested custom-field value to ADO unless the user accepted it, and **do NOT** invent a Ticket Number.
 - **Do NOT** keep asking for custom fields after the user says to skip. Apply, and let ADO's required-field rules decide.
+- **Do NOT** apply a story without setting Assigned To to the logged-in user, and **do NOT** guess an email for it. Use `ado_get_current_identity`.
 - **Do NOT** present or apply a draft without an **Assumptions to confirm** list. If you truly made no assumptions, say so in one line.
 - **Do NOT** turn an unverified guess about how the screen works (e.g. "multiple items at once") into a scenario step or AC without listing it as an assumption.
 - **Do NOT** include display-only elements (labels, tooltips, read-only text, banners, grids, popups, sections, states) in Data Sections — only actual user input fields.
