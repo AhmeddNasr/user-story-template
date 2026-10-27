@@ -32,7 +32,7 @@ Trigger this skill whenever the user:
 4. **Suggest and ask for the custom fields**: Ticket Number, Business Value Category, Business Impact Value and Impact Level (see Custom Fields below). Suggest a value for each field except Ticket Number, then ask the user to use the suggestions or enter their own. Always ask, even when you are confident in the suggestions.
 5. **Draft the Description** using the structure below.
 6. **Draft the Acceptance Criteria** using the Given/When/Then cards below.
-7. **Present the draft** to the user for review (unless they said "apply directly"). Show the custom-field values with the draft. If the user has not answered the custom-field question yet, remind them once here.
+7. **Present the draft** to the user for review (unless they said "apply directly"). Show the custom-field values with the draft, and list every assumption you made under **Assumptions to confirm** (see Assumptions below). If the user has not answered the custom-field question yet, remind them once here.
 8. **Apply to ADO** using the ADO MCP update tool (`ado_update_work_items`). Update `description`, `acceptance_criteria` and the confirmed custom fields (via `custom_fields`) in a single call. If the user said to skip, apply without the missing fields (see Skipping below).
 
 ---
@@ -133,6 +133,32 @@ Pass them in the same `ado_update_work_items` call as the Description and Accept
 ```
 
 Impact Level and Business Value Category are picklists, so the value must match an allowed option exactly. If ADO rejects a value, show the user the error and ask for a valid value.
+
+---
+
+## Assumptions
+
+Any behavior you put in the story that the user did not state and you did not verify is an assumption. Assumptions must be highlighted in the confirmation so the user can correct them before the story reaches ADO.
+
+**Example of what went wrong:** in PBI 49987 (cash-only diagnoses), the draft included an AC for "several diagnoses, one cash-only" because it assumed the physician can add multiple diagnoses at once. In the real screen, diagnoses are added one at a time, so that AC was wrong. It should have been listed as an assumption for the user to confirm.
+
+### What counts as an assumption
+
+- **How the current screen works**: one item or many at a time, which buttons exist, what happens on edit, how the user reaches the screen.
+- **Who and when**: which roles use it, which patients or visits it applies to (e.g. how "insured" is determined).
+- **Scope**: what you included or left out (e.g. old records, other screens with the same function, a setup screen).
+- **Data**: which table or column holds a value, defaults, how a new flag is maintained.
+- **Behavior you added**: extra validation, a server-side check, a message, or an edge case the user did not ask for.
+
+### How to handle them
+
+1. **Verify first when you can.** Check the database, the code or a similar existing story before assuming. Anything you verified is not an assumption, but say where you verified it if it matters.
+2. **List every remaining assumption in the confirmation**, under a heading **Assumptions to confirm**, numbered A-1, A-2, ... Each one is one line: the assumption, then which parts of the story depend on it (scenario steps, ACs, fields). Example:
+   > **A-1** The physician can add several diagnoses at once before saving. *Affects AC-06 and scenario step 6.*
+3. **Put the assumptions before the custom fields and before the apply question**, so they are not missed.
+4. **Ask the user to confirm or correct them** in the same question that asks to apply. If the user corrects an assumption, update the story (remove or rewrite the affected steps and ACs), then show the changed parts.
+5. **Do not write assumptions into the Description or Acceptance Criteria.** The story in ADO describes the agreed behavior only.
+6. **If the user said "apply directly" or "skip"**, apply as asked, then list the assumptions in your reply after applying so the user can still check them.
 
 ---
 
@@ -318,4 +344,6 @@ Description and Acceptance Criteria accept HTML. Set them and every confirmed cu
 - **Do NOT** draft without first suggesting the custom-field values and asking the user to confirm them, even when you are confident.
 - **Do NOT** write a suggested custom-field value to ADO unless the user accepted it, and **do NOT** invent a Ticket Number.
 - **Do NOT** keep asking for custom fields after the user says to skip. Apply, and let ADO's required-field rules decide.
+- **Do NOT** present or apply a draft without an **Assumptions to confirm** list. If you truly made no assumptions, say so in one line.
+- **Do NOT** turn an unverified guess about how the screen works (e.g. "multiple items at once") into a scenario step or AC without listing it as an assumption.
 - **Do NOT** include display-only elements (labels, tooltips, read-only text, banners, grids, popups, sections, states) in Data Sections — only actual user input fields.
