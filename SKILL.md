@@ -32,8 +32,9 @@ Trigger this skill whenever the user:
 4. **Suggest and ask for the custom fields**: Ticket Number, Business Value Category, Business Impact Value and Impact Level (see Custom Fields below). Suggest a value for each field except Ticket Number, then ask the user to use the suggestions or enter their own. Always ask, even when you are confident in the suggestions.
 5. **Draft the Description** using the structure below.
 6. **Draft the Acceptance Criteria** using the Given/When/Then cards below.
-7. **Present the draft** to the user for review (unless they said "apply directly"). Show the custom-field values with the draft, and list every assumption you made under **Assumptions to confirm** (see Assumptions below). If the user has not answered the custom-field question yet, remind them once here.
-8. **Apply to ADO** using the ADO MCP update tool (`ado_update_work_items`). Update `description`, `acceptance_criteria`, `assigned_to` (the logged-in user, see Assigned To below) and the confirmed custom fields (via `custom_fields`) in a single call. If the user said to skip, apply without the missing fields (see Skipping below).
+7. **Present the draft** to the user for review, always. Show the custom-field values with the draft, and list every assumption you made under **Assumptions to confirm** (see Assumptions below). If the user has not answered the custom-field question yet, remind them once here. **Then stop and wait for the user to confirm or correct the assumptions.**
+8. **Apply to ADO only after the user has answered the assumptions.** This gate is mandatory and has no exceptions: a request such as "create the PBI", "apply directly", "just apply", "go ahead" or "skip" does **not** count as confirming the assumptions, and an earlier approval of a design or JSON structure does not either. The only way to skip it is a draft with no assumptions at all, and you must say so in one line before applying. This applies to creating a new PBI (`ado_create_work_items`) and to updating an existing one.
+   Apply using the ADO MCP update tool (`ado_update_work_items`), or `ado_create_work_items` for a new story. Update `description`, `acceptance_criteria`, `assigned_to` (the logged-in user, see Assigned To below) and the confirmed custom fields (via `custom_fields`) in a single call. If the user said to skip, apply without the missing fields (see Skipping below).
 
 ---
 
@@ -96,7 +97,7 @@ Suggest `High` by default. Still ask every time, because the user may want `Crit
 2. **Ask once, before drafting, in a single question.** Show the suggested (or current) value for each field and ask for the ticket number. Offer three answers:
    - **Use suggested values**: the user only needs to give the ticket number.
    - **Enter my own values**: the user gives any values they want to change, plus the ticket number.
-   - **Skip and apply**: go ahead without the missing values (see Skipping below).
+   - **Skip**: go ahead without the missing values (see Skipping below). The assumptions still need the user's answer before applying.
 3. **Always ask, even when you are confident in the suggestions.** A suggestion is not written to ADO until the user accepts it.
 4. **Remind once.** If the user has not answered when you present the draft, mention the open fields again in one line. Do not keep asking after that.
 5. **Never invent a ticket number.**
@@ -113,7 +114,7 @@ Example question:
 
 ### Skipping
 
-If the user says to skip (for example "skip", "just apply", "apply anyway"), apply the story right away without asking about the fields again.
+If the user says to skip (for example "skip", "just apply", "apply anyway"), stop asking about the custom fields. Skipping covers the custom fields only: the assumptions must still be confirmed before applying (see Assumptions below).
 
 - Write only the values the user confirmed or that the PBI already had. Do not write suggestions the user did not accept.
 - ADO's own required-field rules are the only control. If ADO rejects the update because a required field is empty, show the user the error with the field name and ask only for that field.
@@ -170,7 +171,7 @@ Any behavior you put in the story that the user did not state and you did not ve
 3. **Put the assumptions before the custom fields and before the apply question**, so they are not missed.
 4. **Ask the user to confirm or correct them** in the same question that asks to apply. If the user corrects an assumption, update the story (remove or rewrite the affected steps and ACs), then show the changed parts.
 5. **Do not write assumptions into the Description or Acceptance Criteria.** The story in ADO describes the agreed behavior only.
-6. **If the user said "apply directly" or "skip"**, apply as asked, then list the assumptions in your reply after applying so the user can still check them.
+6. **Never apply before the user answers the assumptions.** Not even when the user said "create the PBI", "apply directly" or "skip": those words skip review of the wording and the custom-field question, never the assumptions. Present the assumptions, wait for the answer, update the story with any corrections, then apply. Listing assumptions *after* applying is not allowed.
 
 ---
 
@@ -182,6 +183,7 @@ ADO's rich-text sanitizer keeps **inline `style` attributes** but strips `<style
 - **Safe properties only:** `color`, `background-color`, `border`, `border-left`, `padding`, `margin`, `font-size`, `font-weight`, `display:inline-block`, `min-width`. No flexbox, grid, positioning, or shadows.
 - **Every block that has a `background-color` must also set `color:#323130`.** ADO's dark theme turns default text white, which becomes unreadable on a light background.
 - **No tables** anywhere — not for layout, not for data.
+- **No line breaks in the HTML.** Send the `description` and `acceptance_criteria` values as one continuous line, with no newline characters anywhere, and use `<br>` for every line break you want to see. ADO's editor treats a newline after a `<br>` inside a block as a paragraph break, so it splits the block into two copies with the same style. In PBI 50612 the story callout came out as two boxes ("As a physician," alone in the first box) and every AC card split after its title line. The templates below are already written on one line; keep them that way when you fill them in.
 - **Palette** (Fluent / ADO colors, so the story looks native):
 
 | Use | Color |
@@ -227,13 +229,7 @@ Data Sections             (one block per INPUT field, numbered F-01, F-02, ...)
 ### HTML Template — Story Statement, Context, Navigation
 
 ```html
-<div style="border-left:4px solid #0078D4;background-color:#F3F9FD;color:#323130;padding:10px 14px;margin:0 0 12px 0;">
-<b>As a</b> [specific role],<br>
-<b>I want to</b> [action],<br>
-<b>so that</b> [value].
-</div>
-<p>[Context paragraph: what this story covers.]</p>
-<p><b>Navigation:</b> [Module] &rsaquo; [Screen] &rsaquo; [Action]</p>
+<div style="border-left:4px solid #0078D4;background-color:#F3F9FD;color:#323130;padding:10px 14px;margin:0 0 12px 0;"><b>As a</b> [specific role],<br><b>I want to</b> [action],<br><b>so that</b> [value].</div><p>[Context paragraph: what this story covers.]</p><p><b>Navigation:</b> [Module] &rsaquo; [Screen] &rsaquo; [Action]</p>
 ```
 
 ### HTML Template — User/System Scenario
@@ -253,17 +249,12 @@ Three building blocks — repeat USER / SYSTEM cards as needed, with one arrow b
 <div style="border:1px solid #E1DFDD;border-left:4px solid #605E5C;background-color:#FAF9F8;color:#323130;padding:6px 12px;margin:0 0 0 80px;"><span style="font-size:11px;font-weight:600;color:#605E5C;">2 &nbsp;·&nbsp; SYSTEM</span><br>[system response]<div style="border-left:2px dashed #A19F9D;margin:6px 0 0 2px;padding:0 0 0 10px;color:#605E5C;">&#8627; [alternate path: if X, the system ...]<br>&#8627; [another alternate path]</div></div>
 ```
 
-Omit the inner dashed block when the step has no alternate paths. Write each card on one line with no whitespace between tags — ADO adds stray spacing otherwise.
+Omit the inner dashed block when the step has no alternate paths. The template is split into lines and comments here only so it is easy to read. In the value you send to ADO, drop the comments and join everything into one line with no whitespace between tags (see **No line breaks in the HTML** above).
 
 ### HTML Template — Data Sections (one block per input field)
 
 ```html
-<h3>Data Sections</h3>
-<div style="border-left:3px solid #C8C6C4;padding:4px 12px;margin:0 0 10px 0;">
-<b>F-01&nbsp;&nbsp;[English name]</b>&nbsp;&nbsp;<span dir="rtl" style="color:#605E5C;">[Arabic name]</span><br>
-<span style="color:#605E5C;font-size:12px;">[Text / Dropdown / Checkbox / Toggle / Button / Number / Date] · [Mandatory / Optional / -]</span><br>
-[Notes: behavior, defaults, validation, source of values.]
-</div>
+<h3>Data Sections</h3><div style="border-left:3px solid #C8C6C4;padding:4px 12px;margin:0 0 10px 0;"><b>F-01&nbsp;&nbsp;[English name]</b>&nbsp;&nbsp;<span dir="rtl" style="color:#605E5C;">[Arabic name]</span><br><span style="color:#605E5C;font-size:12px;">[Text / Dropdown / Checkbox / Toggle / Button / Number / Date] · [Mandatory / Optional / -]</span><br>[Notes: behavior, defaults, validation, source of values.]</div>
 ```
 
 ---
@@ -287,14 +278,7 @@ The Acceptance Criteria field uses **Given / When / Then** scenarios, one styled
 Do not add an "Acceptance Criteria" heading — ADO already labels the field. The field starts directly with the AC-01 card.
 
 ```html
-<div style="border:1px solid #E1DFDD;border-left:4px solid #0078D4;padding:8px 12px;margin:0 0 10px 0;">
-<b>AC-01&nbsp;&nbsp;·&nbsp;&nbsp;[Short scenario title]</b><br>
-<span style="display:inline-block;min-width:52px;color:#605E5C;font-weight:600;">GIVEN</span> [precondition, naming the role]<br>
-<span style="display:inline-block;min-width:52px;color:#605E5C;font-weight:600;">AND</span> [additional precondition]<br>
-<span style="display:inline-block;min-width:52px;color:#0078D4;font-weight:600;">WHEN</span> [single action or event]<br>
-<span style="display:inline-block;min-width:52px;color:#107C10;font-weight:600;">THEN</span> [observable outcome] <i>(MSG-01)</i><br>
-<span style="display:inline-block;min-width:52px;color:#107C10;font-weight:600;">AND</span> [additional outcome]
-</div>
+<div style="border:1px solid #E1DFDD;border-left:4px solid #0078D4;padding:8px 12px;margin:0 0 10px 0;"><b>AC-01&nbsp;&nbsp;·&nbsp;&nbsp;[Short scenario title]</b><br><span style="display:inline-block;min-width:52px;color:#605E5C;font-weight:600;">GIVEN</span> [precondition, naming the role]<br><span style="display:inline-block;min-width:52px;color:#605E5C;font-weight:600;">AND</span> [additional precondition]<br><span style="display:inline-block;min-width:52px;color:#0078D4;font-weight:600;">WHEN</span> [single action or event]<br><span style="display:inline-block;min-width:52px;color:#107C10;font-weight:600;">THEN</span> [observable outcome] <i>(MSG-01)</i><br><span style="display:inline-block;min-width:52px;color:#107C10;font-weight:600;">AND</span> [additional outcome]</div>
 ```
 
 ---
@@ -313,12 +297,7 @@ Alerts and Messages live **inside the Acceptance Criteria field**, after the AC 
 ### HTML Template — Message Card (Warning shown)
 
 ```html
-<h3>Alerts and Messages</h3>
-<div style="border-left:4px solid #C19C00;background-color:#FFF4CE;color:#323130;padding:8px 12px;margin:0 0 8px 0;">
-<b>MSG-01</b>&nbsp;&nbsp;<span style="font-size:11px;font-weight:600;">WARNING</span>&nbsp;&nbsp;<span style="color:#605E5C;font-size:12px;">Triggered by AC-03, AC-04</span><br>
-[English text]<br>
-<span dir="rtl">[Arabic text]</span>
-</div>
+<h3>Alerts and Messages</h3><div style="border-left:4px solid #C19C00;background-color:#FFF4CE;color:#323130;padding:8px 12px;margin:0 0 8px 0;"><b>MSG-01</b>&nbsp;&nbsp;<span style="font-size:11px;font-weight:600;">WARNING</span>&nbsp;&nbsp;<span style="color:#605E5C;font-size:12px;">Triggered by AC-03, AC-04</span><br>[English text]<br><span dir="rtl">[Arabic text]</span></div>
 ```
 
 For the other types, swap the border and background: Error `#A4262C` / `#FDE7E9`, Info `#0078D4` / `#DEECF9`, Success `#107C10` / `#DFF6DD`.
@@ -350,9 +329,10 @@ Description and Acceptance Criteria accept HTML. Set them and every confirmed cu
 - **Do NOT** put more than one WHEN in an AC — split it.
 - **Do NOT** use `<style>` blocks, `class` attributes, flexbox, or grid — ADO strips them.
 - **Do NOT** set a `background-color` without also setting `color:#323130`.
+- **Do NOT** put newline characters anywhere in the `description` or `acceptance_criteria` HTML. A newline after `<br>` makes ADO split the box in two. Send each field as one line.
 - **Do NOT** include Channels, Is Data Changed?, or Is Database Impacted? — these were removed from the template.
 - **Do NOT** use "User" as the persona — be specific (doctor, pharmacist, lab user, nurse, receptionist, patient, admin).
-- **Do NOT** apply changes without user confirmation unless they said "apply directly".
+- **Do NOT** create or update a PBI in ADO before the user has answered the **Assumptions to confirm** list. "Create the PBI", "apply directly" or "skip" are not answers to it.
 - **Do NOT** skip the module identification step — always determine the module before drafting.
 - **Do NOT** draft without first suggesting the custom-field values and asking the user to confirm them, even when you are confident.
 - **Do NOT** write a suggested custom-field value to ADO unless the user accepted it, and **do NOT** invent a Ticket Number.
