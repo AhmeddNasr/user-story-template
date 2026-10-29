@@ -315,6 +315,7 @@ For the other types, swap the border and background: Error `#A4262C` / `#FDE7E9`
 | `custom_fields` → `Custom.BusinessValueCategory` | Confirmed category (Compliance & Risk / Customer & Strategic Value / Cost & Efficiency) |
 | `custom_fields` → `Custom.BusinessImpactValue` | Confirmed 1–2 line business impact |
 | `custom_fields` → `Custom.Impactlevel` | Confirmed impact level (default suggestion: High) |
+| `tags` (System.Tags) | Leave empty. Set only when the user explicitly asks for tags, and use exactly the tags they name |
 
 Description and Acceptance Criteria accept HTML. Set them and every confirmed custom field in the same update call.
 
@@ -341,3 +342,4 @@ Description and Acceptance Criteria accept HTML. Set them and every confirmed cu
 - **Do NOT** present or apply a draft without an **Assumptions to confirm** list. If you truly made no assumptions, say so in one line.
 - **Do NOT** turn an unverified guess about how the screen works (e.g. "multiple items at once") into a scenario step or AC without listing it as an assumption.
 - **Do NOT** include display-only elements (labels, tooltips, read-only text, banners, grids, popups, sections, states) in Data Sections — only actual user input fields.
+- **Do NOT** add tags (System.Tags) to a story unless the user explicitly asks for them, and then add only the tags they name. Never assume or infer tags from the feature, module, design file, or story content, and do not add them "for grouping" on your own.
